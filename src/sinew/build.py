@@ -88,6 +88,9 @@ def write_sqlite(path, verses, books_rows, texts, vmap, edges, meta):
 
 def export_parquet(sqlite_path, out_dir):
     import pyarrow as pa, pyarrow.parquet as pq
+    # Explicit types for columns that are all-NULL in v1 but get populated in P1, so the
+    # published Parquet schema stays stable across versions (no null->string/double break).
+    type_hints = {"confidence": pa.float64(), "turpie_class": pa.string()}
     out_dir.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(sqlite_path)
     con.row_factory = sqlite3.Row
@@ -96,7 +99,7 @@ def export_parquet(sqlite_path, out_dir):
     for t in tables:
         rows = con.execute(f"SELECT * FROM {t}").fetchall()
         cols = [d[0] for d in con.execute(f"SELECT * FROM {t} LIMIT 0").description]
-        table = pa.table({c: [r[c] for r in rows] for c in cols})
+        table = pa.table({c: pa.array([r[c] for r in rows], type=type_hints.get(c)) for c in cols})
         pq.write_table(table, out_dir / f"{t}.parquet")
     con.close()
     return tables
