@@ -1,0 +1,26 @@
+Sinew dataset & code — licensing
+=================================
+
+COMPILATION (the dataset: schema, derived tables, build pipeline, and the curated assembly
+of cross-references): Creative Commons Attribution 4.0 International (CC-BY-4.0).
+SPDX-License-Identifier: CC-BY-4.0
+Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+REQUIRED ATTRIBUTION
+--------------------
+Cross-reference connections are derived from OpenBible.info and are licensed CC-BY. Any
+redistribution or use MUST credit:
+  "Cross-references © OpenBible.info, CC-BY (https://www.openbible.info/labs/cross-references/)."
+and acknowledge this dataset:
+  "Sinew — sourced Bible connection-graph (CC-BY-4.0)."
+
+UNDERLYING TEXT
+---------------
+The World English Bible (WEB) text is in the PUBLIC DOMAIN and carries no usage restrictions.
+
+VERSIFICATION
+-------------
+Versification mappings adopt the Copenhagen Alliance versification specification
+(https://github.com/Copenhagen-Alliance/versification-specification), CC-BY / open license.
+
+Per-source URLs and sha256 pins are recorded in sources.lock.json and in the dataset_meta table.

@@ -1,0 +1,48 @@
+{
+  "generated": "2026-06-02",
+  "note": "Pinned raw inputs. sha256 of the vendored file is the authoritative pin; URLs are for re-fetch. For git sources, pin a commit when re-fetching (see src/sinew/fetch.py).",
+  "sources": {
+    "web_text": {
+      "file": "data/raw/web.json",
+      "sha256": "731ddc05b7570ac0c525a74e4a49d6da4f922aec18e7e982514a4f88432ad1ac",
+      "url": "https://api.getbible.net/v2/web.json",
+      "upstream": "https://ebible.org/web/",
+      "description": "World English Bible (WEB), eng/KJV versification",
+      "license": "Public Domain",
+      "retrieved": "2026-06-02"
+    },
+    "versification_eng": {
+      "file": "data/raw/cph_eng.json",
+      "sha256": "5162023f8e0604fce96a49d7fb8cea73ef699928846d10d62210bd4882e81338",
+      "url": "https://raw.githubusercontent.com/Copenhagen-Alliance/versification-specification/master/versification-mappings/standard-mappings/eng.json",
+      "description": "Copenhagen Alliance versification: eng -> org mappings",
+      "license": "CC-BY / open",
+      "retrieved": "2026-06-02"
+    },
+    "versification_org": {
+      "file": "data/raw/cph_org.json",
+      "sha256": "3b8e065fb592100265ff9ebcea71f5376927fa03c085844f3058d463a2e9cac7",
+      "url": "https://raw.githubusercontent.com/Copenhagen-Alliance/versification-specification/master/versification-mappings/standard-mappings/org.json",
+      "description": "Copenhagen Alliance versification: org (Hebrew) base, maxVerses",
+      "license": "CC-BY / open",
+      "retrieved": "2026-06-02"
+    },
+    "versification_lxx": {
+      "file": "data/raw/cph_lxx.json",
+      "sha256": "90d980f784512aea00af48646c337b1f7cb97bae3023a9223155369034e466f2",
+      "url": "https://raw.githubusercontent.com/Copenhagen-Alliance/versification-specification/master/versification-mappings/standard-mappings/lxx.json",
+      "description": "Copenhagen Alliance versification: lxx -> org mappings (P1 use)",
+      "license": "CC-BY / open",
+      "retrieved": "2026-06-02"
+    },
+    "cross_references": {
+      "file": "data/raw/openbible_cross_references.txt",
+      "sha256": "fda2770973c3400b22236297335690ef3419e502934f09109753b6c442cc50a9",
+      "url": "https://a.openbible.info/data/cross-references.zip",
+      "homepage": "https://www.openbible.info/labs/cross-references/",
+      "description": "OpenBible.info topic/cross-reference votes (~340k), eng/KJV versification",
+      "license": "CC-BY",
+      "retrieved": "2026-06-02"
+    }
+  }
+}
