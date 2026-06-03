@@ -43,6 +43,24 @@ NT         = set(BOOKS[39:])                                  # Matt..Rev
 def testament(book): return "NT" if book in NT else "OT"
 
 
+# Literary/genre sections — used to colour the meaning-terrain view (sinew.embed / meaning.viz.js).
+# Position there encodes computed meaning (Tier 3); section is just a familiar colour key, not a claim.
+SECTIONS = [
+    ("Law",          "Gen Exod Lev Num Deut".split(),                                              "#2a6f97"),
+    ("History",      "Josh Judg Ruth 1Sam 2Sam 1Kgs 2Kgs 1Chr 2Chr Ezra Neh Esth".split(),         "#468faf"),
+    ("Wisdom",       "Job Ps Prov Eccl Song".split(),                                               "#61a5c2"),
+    ("Prophets",     "Isa Jer Lam Ezek Dan Hos Joel Amos Obad Jonah Mic Nah Hab Zeph Hag Zech Mal".split(), "#89c2d9"),
+    ("Gospels/Acts", "Matt Mark Luke John Acts".split(),                                            "#e76f51"),
+    ("Epistles",     "Rom 1Cor 2Cor Gal Eph Phil Col 1Thess 2Thess 1Tim 2Tim Titus Phlm Heb Jas 1Pet 2Pet 1John 2John 3John Jude".split(), "#f4a261"),
+    ("Revelation",   ["Rev"],                                                                       "#e9c46a"),
+]
+assert sum(len(bs) for _, bs, _ in SECTIONS) == 66
+_SECTION_OF    = {b: name for name, bs, _ in SECTIONS for b in bs}
+_SECTION_COLOR = {b: col  for _, bs, col in SECTIONS for b in bs}
+def section(book):       return _SECTION_OF.get(book)        # e.g. 'Wisdom'; None if unknown
+def section_color(book): return _SECTION_COLOR.get(book)     # hex for the section; None if unknown
+
+
 def parse_id(verse_id):
     """'1Cor.5.7' -> ('1Cor', 5, 7). Returns None if malformed/unknown book."""
     p = verse_id.split(".")

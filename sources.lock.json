@@ -43,6 +43,15 @@
       "description": "OpenBible.info topic/cross-reference votes (~340k), eng/KJV versification",
       "license": "CC-BY",
       "retrieved": "2026-06-02"
+    },
+    "viz_d3": {
+      "file": "src/sinew/viz/vendor/d3.v7.min.js",
+      "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539",
+      "url": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
+      "homepage": "https://d3js.org/",
+      "description": "D3 v7.9.0 UMD bundle, vendored for the offline telescope visual (sinew.export_viz)",
+      "license": "ISC",
+      "retrieved": "2026-06-02"
     }
   }
 }

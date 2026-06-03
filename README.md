@@ -36,7 +36,8 @@ silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictio
 
 - **Tier 1 — Facts:** verse text, canonical IDs, book metadata, versification map.
 - **Tier 2 — Sourced connections:** every edge has `type + source + weight (+ review_status)`.
-- **Tier 3 — Derived (not in v1):** computed embeddings/similarity, *"computed, not authoritative."*
+- **Tier 3 — Derived (optional):** computed embeddings/similarity, *"computed, not authoritative."*
+  Powers the meaning-terrain view; built opt-in (`make embed`), kept in `derived_*`, never joined to facts.
 
 ## What's in v1
 
@@ -48,9 +49,14 @@ silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictio
 | **Connections** | OpenBible cross-references → **613,998** Tier-2 edges (`type=cross_reference`, `weight=votes`) |
 | **Distribution** | `sinew.sqlite` + Parquet, reproducible pinned build, validation suite |
 
+Two surfaces ship on top of the dataset: a read-only **MCP server** (grounded agent queries) and a
+**telescope visualization** — two linked views, a **meaning terrain** (Tier-3, opt-in) and a **chord
+diagram**, the canon connecting to itself. See below.
+
 **Roadmap (P1, de-risked spikes, not in v1):** typed NT→OT quotations (Turpie 1868, classified
-A–E); an MCP server for grounded agent queries; Tier-3 embeddings + the "meaning terrain" map;
-original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.
+A–E); deeper Tier-3 semantic search / discovery; original-language (Macula) lemma/morphology; more
+PD translations + multilingual alignment. *(The Tier-3 meaning-terrain map already ships as an
+opt-in view — see [Visualize](#visualize-the-telescope).)*
 
 ## Schema
 
@@ -103,6 +109,84 @@ con.execute("SELECT scheme_ref FROM versification_map WHERE verse_id='Joel.2.32'
 ```
 
 Parquet (`dist/parquet/*.parquet`) loads in pandas/duckdb/polars for analytics.
+
+## MCP server (grounded agent queries)
+
+A thin, **read-only** MCP server lets an agent query *sourced, attributed* connections instead of
+hallucinating them. Every connection it returns carries its provenance (`source + weight +
+review_status`) — connections are **attributed, not asserted** ("OpenBible lists this with N votes").
+It makes no network calls and operates entirely on the local dataset.
+
+```bash
+pip install -e ".[mcp]"     # optional extra (Python ≥3.10); core install stays pyarrow-only
+make mcp                    # or: sinew-mcp   (stdio transport)
+```
+
+Point a client at it (Claude Desktop / Claude Code `mcpServers`):
+
+```json
+{ "mcpServers": { "sinew": { "command": "sinew-mcp", "env": { "SINEW_DB": "/abs/path/dist/sinew.sqlite" } } } }
+```
+
+Tools — `get_verse` and `reconcile_reference` are **Tier 1** (facts); `get_cross_references`,
+`get_back_references`, `get_path` are **Tier 2** (sourced); `search_text` is **lexical**, not semantic:
+
+| tool | returns |
+|---|---|
+| `get_verse(verse_id)` | canonical address, WEB text, book metadata |
+| `get_cross_references(verse_id, min_weight=0, limit=20, include_unresolved=False, type=None, source=None)` | verses it cites, by weight desc, each with provenance |
+| `get_back_references(verse_id, …)` | verses that point **at** it, same shape |
+| `reconcile_reference(verse_id, scheme='org')` | its reference under another versification scheme (e.g. `Joel.2.32` → org `Joel.3.5`) |
+| `search_text(query, limit=20)` | **lexical** substring match over WEB text |
+| `get_path(from, to, max_hops=3)` | shortest sourced-edge path (bounded/best-effort), each hop with provenance |
+
+`type` and `source` are first-class facets, so a future `quotation` type or `derived_*` source is a
+new facet value, not a new tool. Resolved (`ok`) edges only by default; opt in with
+`include_unresolved=True` — unresolved edges are surfaced flagged, never coerced to `ok`.
+
+## Visualize (the telescope)
+
+```bash
+make viz          # export -> dist/viz/ (open dist/viz/index.html for the hero, file:// is fine)
+make viz-serve    # serve dist/viz/ so click-to-drill-down works -> http://localhost:8000
+```
+
+Two linked views (each works offline; `make viz` needs **no** ML deps — it reads the precomputed
+`meaning.json`):
+
+- **`index.html` — meaning view (hero).** Every chapter is placed by what it *means* (a computed text
+  embedding — **Tier 3, not authoritative**). The field is **calm by default — no arcs**; **hover a
+  chapter to reveal only its sourced cross-references** (Tier 2), coloured teal→gold by meaning-distance
+  so a **gold link is *surprising*** (a sourced connection that's right yet spans a wide meaning gap),
+  with a dashed halo on its nearest meaning-neighbors; everything else dims. Click to pin. A
+  **meaning⇄kinship** toggle re-lays-out the same chapters from the cross-ref graph (OT/NT separation
+  z≈0.6 in meaning vs ≈1.7 in kinship — the terrain clusters by genre/theme, not Testament).
+- **`chord.html` — radial chord diagram.** The 66 books on a ring; the default view isolates the
+  ~129k **cross-Testament** arcs. Click a book to drill into its verse-level links; hover any arc to
+  read **both** verse texts and its provenance. D3 is **vendored and pinned** (`sources.lock.json`).
+
+Both honor *attribute-never-assert*: only `review_status='ok'` Tier-2 edges are authoritative, and
+the terrain's positions are explicitly labelled *"computed, not authoritative."*
+
+### Building the meaning layer (Tier-3, opt-in)
+
+The view's data is produced by an **opt-in** step that needs heavier deps, and is committed as a small
+artifact (`src/sinew/viz/data/meaning.json`, a few hundred KB) so the viz itself stays ML-free:
+
+```bash
+pip install -e ".[embed]"   # sentence-transformers + scikit-learn + numpy (optional extra)
+make embed                  # reads dist/sinew.sqlite -> meaning.json + Tier-3 derived_* tables
+```
+
+It embeds every WEB verse (`all-mpnet-base-v2`), mean-pools to chapter vectors, lays out the meaning
+(t-SNE) and kinship (spectral) terrains, and records **each chapter's top-K sourced cross-references +
+nearest meaning-neighbors** for the on-hover reveal. It also writes additive `derived_*` tables
+(`derived_meta` / `_chapter_layout` / `_chapter_vec` / `_surprising` = the most surprising sourced
+links by `log1p(votes) × cos_distance`, all `tier=3`) for local/power use — **never joined to the
+Tier-1/2 fact tables**.
+Embeddings/t-SNE are not byte-stable across ML builds, so `meaning.json` (model id pinned,
+`random_state=0`) is the committed source of truth and is **excluded from the core dataset's
+byte-for-byte reproducibility claim**.
 
 ## Build & reproduce
 

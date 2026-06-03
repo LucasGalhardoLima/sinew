@@ -15,9 +15,18 @@ dependencies = ["pyarrow>=15"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+mcp = ["mcp>=1.2"]                       # optional: only needed to run the MCP server (Python >=3.10)
+embed = ["sentence-transformers>=3", "scikit-learn>=1.3", "numpy>=1.24"]  # optional: Tier-3 meaning layer (`make embed`)
+
+[project.scripts]
+sinew-mcp = "sinew.mcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+sinew = ["viz/index.html", "viz/meaning.html", "viz/sinew.viz.js",
+         "viz/meaning.viz.js", "viz/vendor/*.js", "viz/data/meaning.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

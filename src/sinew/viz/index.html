@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sinew — the canon in dialogue with itself</title>
+  <style>
+    :root {
+      --bg: #0f1115; --panel: #161a21; --ink: #e8e6df; --muted: #9aa0ab;
+      --ot: #5c83a6; --nt: #c08a3e; --line: #2a2f3a; --accent: #d9a441;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+      font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { padding: 18px 24px 6px; }
+    header h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .2px; }
+    header p { margin: 3px 0 0; color: var(--muted); font-size: 13px; max-width: 70ch; }
+    #controls { display: flex; align-items: center; gap: 16px; padding: 10px 24px;
+      flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+    #controls label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+    #controls button { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+      border-radius: 7px; padding: 5px 11px; cursor: pointer; font-size: 13px; }
+    #controls button:hover { border-color: var(--accent); }
+    #status { color: var(--muted); font-size: 12.5px; margin-left: auto; }
+    #stage { display: grid; place-items: center; padding: 8px; }
+    svg { width: min(86vh, 96vw); height: min(86vh, 96vw); max-width: 920px; max-height: 920px; }
+    .book-arc { cursor: pointer; }
+    .book-label { font-size: 9px; fill: var(--muted); pointer-events: none; user-select: none; }
+    .book-label.ot { fill: #9fb6cd; } .book-label.nt { fill: #e0b878; }
+    .edge { fill: none; pointer-events: stroke; }
+    .edge.dim { opacity: .05 !important; }
+    .node-dot { stroke: #0f1115; stroke-width: .75; }
+    #legend { position: fixed; left: 24px; bottom: 18px; background: var(--panel);
+      border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; max-width: 320px; }
+    #legend h3 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--ink); }
+    #legend .row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    #legend .swatch { width: 22px; height: 4px; border-radius: 2px; }
+    #legend .note { margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+    .tip { position: fixed; pointer-events: none; max-width: 360px; background: #1b2029f2;
+      border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; font-size: 12.5px;
+      box-shadow: 0 8px 30px #0008; z-index: 9; }
+    .tip .ref { color: var(--accent); font-weight: 600; }
+    .tip .txt { color: var(--ink); margin: 2px 0 8px; }
+    .tip .prov { color: var(--muted); font-size: 11.5px; border-top: 1px solid var(--line); padding-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sinew · the canon in dialogue with itself</h1>
+    <p>Each arc is a cross-reference one verse makes to another — sourced and attributable, never
+       asserted. The default view isolates the references that cross between the Testaments: watch the
+       New answer the Old. Click a book to drill into its verse-level links; hover any arc to read both
+       verses and see who lists the connection. ·
+       <a href="index.html" style="color:#d9a441;text-decoration:none">Switch to the meaning terrain →</a></p>
+  </header>
+  <div id="controls">
+    <label><input type="checkbox" id="xtOnly" checked> Cross-Testament only</label>
+    <button id="reset" hidden>← Back to all books</button>
+    <span id="status"></span>
+  </div>
+  <div id="stage"><svg id="viz" viewBox="0 0 920 920" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div id="legend"></div>
+  <div id="tooltip" class="tip" hidden></div>
+
+  <!--SINEW_BOOKS-->
+  <script src="vendor/d3.v7.min.js"></script>
+  <script src="sinew.viz.js"></script>
+</body>
+</html>
