@@ -25,10 +25,11 @@
   const tip = document.getElementById("tooltip");
   const toggleBtn = document.getElementById("toggle");
 
-  const gArcs = mk("g"), gHalo = mk("g"), gNodes = mk("g"), gLabels = mk("g");
-  [gArcs, gHalo, gNodes, gLabels].forEach(g => svg.appendChild(g));   // paint order: arcs<halo<nodes<labels
+  const gArcs = mk("g"), gHalo = mk("g"), gNodes = mk("g"), gLabels = mk("g"), gFlash = mk("g");
+  [gArcs, gHalo, gNodes, gLabels, gFlash].forEach(g => svg.appendChild(g));  // arcs<halo<nodes<labels<flash
 
   let M = null, mode = "meaning", circs = [], secLabels = [], active = -1, pinned = false;
+  let labelIndex = null, maxChap = null, inputEl = null, msgEl = null;   // search / jump-to state
 
   init();
 
@@ -47,6 +48,17 @@
       positionAll();
       updateStatus();
     });
+
+    // search / jump-to (chapter · verse)
+    inputEl = document.getElementById("search");
+    msgEl = document.getElementById("searchMsg");
+    buildLabelIndex();
+    inputEl.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") { ev.preventDefault(); runSearch(); }
+      else if (ev.key === "Escape") { inputEl.value = ""; searchMsg(""); pinned = false; clearReveal(); }
+    });
+    document.getElementById("go").addEventListener("click", runSearch);
+
     updateStatus();
   }
 
@@ -201,6 +213,135 @@
       `authoritative). Hover a chapter → its <em>sourced</em> cross-references (Tier 2); ` +
       `<span style="color:var(--gold)">gold = surprising</span> (a sourced link spanning a wide meaning ` +
       `gap). Dashed halo = nearest in meaning. Sinew attributes, it does not assert.</div>`;
+  }
+
+  // ---- search / jump-to (chapter · verse) ----
+  // Resolve a free-typed reference ("Isaiah 53", "Isa 53", "Ps 23", "John 3:16", "1 Cor 13", or a bare
+  // book name) to a chapter node and pin it — reusing drawReveal + the click-to-pin path. Fully
+  // client-side over the labels already in meaning.json (OSIS tokens like "Isa 53"); no new data. The
+  // explorer is chapter-level, so a verse resolves to its chapter (and is echoed in the status line).
+  // [book, full name, ...aliases]; the OSIS token + full name are added as aliases automatically.
+  const BOOKS = [
+    ["Gen", "Genesis", "gn"], ["Exod", "Exodus", "ex", "exo"], ["Lev", "Leviticus", "lv", "levit"],
+    ["Num", "Numbers", "nm", "nb", "numb"], ["Deut", "Deuteronomy", "dt", "deu"],
+    ["Josh", "Joshua", "jsh", "jos"], ["Judg", "Judges", "jdg", "jgs", "judges"], ["Ruth", "Ruth", "rth", "ru"],
+    ["1Sam", "1 Samuel", "1sa", "1sm", "1samuel"], ["2Sam", "2 Samuel", "2sa", "2sm", "2samuel"],
+    ["1Kgs", "1 Kings", "1ki", "1kg", "1kings"], ["2Kgs", "2 Kings", "2ki", "2kg", "2kings"],
+    ["1Chr", "1 Chronicles", "1ch", "1chron", "1chronicles"], ["2Chr", "2 Chronicles", "2ch", "2chron", "2chronicles"],
+    ["Ezra", "Ezra", "ezr"], ["Neh", "Nehemiah", "ne"], ["Esth", "Esther", "est", "es"], ["Job", "Job", "jb"],
+    ["Ps", "Psalms", "psalm", "psa", "pss", "psm", "pslm"], ["Prov", "Proverbs", "pr", "prv", "pro"],
+    ["Eccl", "Ecclesiastes", "ec", "ecc", "eccles", "qoh"],
+    ["Song", "Song of Solomon", "sos", "sng", "ss", "canticles", "songofsongs"],
+    ["Isa", "Isaiah", "is", "isah"], ["Jer", "Jeremiah", "je", "jr"], ["Lam", "Lamentations", "la"],
+    ["Ezek", "Ezekiel", "eze", "ezk"], ["Dan", "Daniel", "dn", "da"], ["Hos", "Hosea", "ho"],
+    ["Joel", "Joel", "jl", "joe"], ["Amos", "Amos", "am"], ["Obad", "Obadiah", "ob", "oba"],
+    ["Jonah", "Jonah", "jon", "jnh"], ["Mic", "Micah", "mc"], ["Nah", "Nahum", "na"], ["Hab", "Habakkuk", "hb"],
+    ["Zeph", "Zephaniah", "zep", "zp"], ["Hag", "Haggai", "hg"], ["Zech", "Zechariah", "zec", "zc"],
+    ["Mal", "Malachi", "ml"], ["Matt", "Matthew", "mt", "mat"], ["Mark", "Mark", "mk", "mr", "mrk"],
+    ["Luke", "Luke", "lk", "lu", "luk"], ["John", "John", "jn", "jhn", "joh"], ["Acts", "Acts", "ac", "act"],
+    ["Rom", "Romans", "ro", "rm"], ["1Cor", "1 Corinthians", "1co", "1corinthians"],
+    ["2Cor", "2 Corinthians", "2co", "2corinthians"], ["Gal", "Galatians", "ga"], ["Eph", "Ephesians", "ephes"],
+    ["Phil", "Philippians", "php", "phlp", "philip", "philippians"], ["Col", "Colossians", "coloss"],
+    ["1Thess", "1 Thessalonians", "1th", "1thes", "1thessalonians"], ["2Thess", "2 Thessalonians", "2th", "2thes", "2thessalonians"],
+    ["1Tim", "1 Timothy", "1ti", "1timothy"], ["2Tim", "2 Timothy", "2ti", "2timothy"], ["Titus", "Titus", "tit"],
+    ["Phlm", "Philemon", "phm", "philem", "philemon"], ["Heb", "Hebrews", "he"], ["Jas", "James", "jms", "jam", "james"],
+    ["1Pet", "1 Peter", "1pe", "1pt", "1peter"], ["2Pet", "2 Peter", "2pe", "2pt", "2peter"],
+    ["1John", "1 John", "1jn", "1jo", "1jhn"], ["2John", "2 John", "2jn", "2jo"], ["3John", "3 John", "3jn", "3jo"],
+    ["Jude", "Jude", "jud", "jd"], ["Rev", "Revelation", "re", "apoc", "apocalypse", "revelations"],
+  ];
+
+  function normBook(s) {
+    return s.toLowerCase()
+      .replace(/\b1st\b/g, "1").replace(/\b2nd\b/g, "2").replace(/\b3rd\b/g, "3")
+      .replace(/\bfirst\b/g, "1").replace(/\bsecond\b/g, "2").replace(/\bthird\b/g, "3")
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  const OSIS_ALIASES = (() => {
+    const m = new Map();
+    for (const [osis, full, ...al] of BOOKS) {
+      m.set(normBook(osis), osis); m.set(normBook(full), osis);
+      for (const a of al) m.set(normBook(a), osis);
+    }
+    return m;
+  })();
+  const FULLNAMES = BOOKS.map(b => [normBook(b[1]), b[0]]);   // for partial-typing prefix fallback
+
+  function resolveBook(raw) {
+    const n = normBook(raw);
+    if (!n) return null;
+    if (OSIS_ALIASES.has(n)) return OSIS_ALIASES.get(n);
+    if (n.length >= 2) {                                       // unique full-name prefix, e.g. "isai" → Isaiah
+      const hits = [...new Set(FULLNAMES.filter(([fn]) => fn.startsWith(n)).map(([, o]) => o))];
+      if (hits.length === 1) return hits[0];
+    }
+    return null;
+  }
+
+  function buildLabelIndex() {
+    labelIndex = new Map(); maxChap = new Map();
+    M.nodes.forEach((n, i) => {
+      const lbl = n[5], sp = lbl.lastIndexOf(" ");            // "Isa 53" → token "Isa", chapter 53
+      labelIndex.set(lbl.toLowerCase(), i);
+      const tok = lbl.slice(0, sp), c = parseInt(lbl.slice(sp + 1), 10);
+      if (!maxChap.has(tok) || c > maxChap.get(tok)) maxChap.set(tok, c);
+    });
+  }
+
+  function parseQuery(str) {
+    const s = str.trim();
+    if (!s) return null;
+    let raw, chap, verse = null;
+    const m = s.match(/^(.*?)[\s.]*(\d+)(?::\s*(\d+))?\s*$/);  // trailing number = chapter (leading stays in book)
+    if (m && m[1].trim()) { raw = m[1]; chap = parseInt(m[2], 10); verse = m[3] ? parseInt(m[3], 10) : null; }
+    else { raw = s; chap = 1; }                                // bare book name → its first chapter
+    const osis = resolveBook(raw);
+    if (!osis) return null;
+    const i = labelIndex.get((osis + " " + chap).toLowerCase());
+    if (i !== undefined) return { i, osis, chap, verse };
+    return { error: `${osis} has no chapter ${chap} (1–${maxChap.get(osis) || "?"}).` };
+  }
+
+  function runSearch() {
+    const q = inputEl.value;
+    const res = parseQuery(q);
+    if (!res) { searchMsg(`No match for “${q.trim()}”. Try “Isaiah 53” or “John 3:16”.`, true); return; }
+    if (res.i === undefined) { searchMsg(res.error, true); return; }
+    searchMsg("");
+    pinned = true;
+    drawReveal(res.i);
+    placeTipAtNode(res.i);
+    flash(res.i);
+    statusEl.textContent = (res.verse ? `${res.osis} ${res.chap}:${res.verse} → ${M.nodes[res.i][5]}` : M.nodes[res.i][5])
+      + " · pinned (Esc to clear)";
+  }
+
+  function searchMsg(text, warn) {
+    if (!msgEl) return;
+    msgEl.textContent = text || "";
+    msgEl.classList.toggle("warn", !!warn);
+  }
+
+  function placeTipAtNode(i) {                                 // position the tooltip at the node (no mouse event)
+    const ctm = svg.getScreenCTM(); if (!ctm) return;
+    const [x, y] = coords(i), pt = svg.createSVGPoint();
+    pt.x = x; pt.y = y;
+    const sp = pt.matrixTransform(ctm);
+    placeTip({ clientX: sp.x, clientY: sp.y });
+  }
+
+  function flash(i) {                                          // brief gold ring so the eye finds the jump target
+    const [x, y] = coords(i), r0 = rad(M.nodes[i]), ring = mk("circle");
+    ring.setAttribute("cx", x); ring.setAttribute("cy", y);
+    ring.setAttribute("fill", "none"); ring.setAttribute("stroke", "#ffe6a7"); ring.setAttribute("stroke-width", "1.6");
+    gFlash.appendChild(ring);
+    const t0 = performance.now(), dur = 650;
+    (function step(t) {
+      const k = Math.min((t - t0) / dur, 1);
+      ring.setAttribute("r", (r0 + 1 + 13 * k).toFixed(1));
+      ring.setAttribute("stroke-opacity", (0.9 * (1 - k)).toFixed(2));
+      if (k < 1) requestAnimationFrame(step); else gFlash.removeChild(ring);
+    })(t0);
   }
 
   // ---- helpers ----

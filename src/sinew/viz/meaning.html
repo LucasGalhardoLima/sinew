@@ -23,6 +23,13 @@
     #controls button { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
       border-radius: 7px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
     #controls button:hover { border-color: var(--accent); }
+    #search-wrap { display: inline-flex; gap: 6px; align-items: center; }
+    #search { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+      border-radius: 7px; padding: 6px 10px; font-size: 13px; width: min(46vw, 340px); }
+    #search::placeholder { color: var(--muted); }
+    #search:focus { outline: none; border-color: var(--accent); }
+    #searchMsg { font-size: 12.5px; color: var(--muted); }
+    #searchMsg.warn { color: #e0a98a; }
     #status { color: var(--muted); font-size: 12.5px; }
     #stage { display: grid; place-items: center; padding: 8px; }
     svg { width: 96vw; max-width: 1280px; height: auto; display: block; cursor: crosshair; }
@@ -54,10 +61,18 @@
        reveal only its sourced OpenBible cross-references</b> (Tier&nbsp;2, attributed not asserted),
        where <span class="gold">gold marks a surprising link</span> spanning a wide meaning gap, and a
        dashed halo marks its nearest neighbors in meaning. Click to pin; toggle the meaning⇄kinship
-       layout. · <a href="chord.html">Switch to the chord view →</a></p>
+       layout. Or <b>search a reference</b> (e.g. <em>Isaiah 53</em>, <em>John 3:16</em>) to jump
+       straight to a chapter. · <a href="chord.html">Switch to the chord view →</a></p>
   </header>
   <div id="controls">
+    <div id="search-wrap">
+      <input id="search" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Find a chapter or verse — e.g. Isaiah 53, John 3:16"
+             aria-label="Find a chapter or verse">
+      <button id="go" title="Jump to this reference">Go</button>
+    </div>
     <button id="toggle">Layout: MEANING ⇄ KINSHIP</button>
+    <span id="searchMsg" role="status" aria-live="polite"></span>
     <span id="status"></span>
   </div>
   <div id="stage"><svg id="viz" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet"></svg></div>
