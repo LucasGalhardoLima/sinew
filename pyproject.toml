@@ -17,6 +17,7 @@ dependencies = ["pyarrow>=15"]
 dev = ["pytest>=8"]
 mcp = ["mcp>=1.2"]                       # optional: only needed to run the MCP server (Python >=3.10)
 embed = ["sentence-transformers>=3", "scikit-learn>=1.3", "numpy>=1.24"]  # optional: Tier-3 meaning layer (`make embed`)
+publish = ["huggingface_hub>=0.23"]     # optional: publish to the HF Hub (`scripts/publish_hf.py`)
 
 [project.scripts]
 sinew-mcp = "sinew.mcp.server:main"

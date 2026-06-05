@@ -23,6 +23,16 @@ carrying its provenance.
 > Sinew is the connective tissue of the canon: the layer that links verse↔verse with provenance,
 > so others build on reconnected Scripture instead of feeding a PDF to an AI.
 
+[![🤗 Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-Sinew-yellow)](https://huggingface.co/datasets/LucasGalhardoLima/sinew)
+[![🤗 Live explorer](https://img.shields.io/badge/%F0%9F%A4%97%20Space-explorer-blue)](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)
+[![License: CC BY 4.0](https://img.shields.io/badge/license-CC--BY--4.0-green)](LICENSE)
+
+**[🔭 Open the live explorer →](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)** — navigate the canon by *meaning*; hover any chapter to reveal its sourced cross-references. &nbsp;**[🗃️ Get the dataset →](https://huggingface.co/datasets/LucasGalhardoLima/sinew)**
+
+[![Sinew explorer demo](docs/demo.gif)](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)
+
+> A **gold** link is a sourced cross-reference that's *right yet surprising* — it connects chapters far apart on the meaning terrain. Toggle **meaning ⇄ kinship** to watch those long arcs collapse.
+
 ## Why
 
 Anyone building on the Bible (study apps, sermon tools, AI agents, research) re-does the same
