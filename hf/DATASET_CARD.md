@@ -38,7 +38,7 @@ carrying its provenance**.
 > so others build on reconnected Scripture instead of feeding a PDF to an AI.
 
 🧑‍💻 **Code, build & MCP server:** <https://github.com/LucasGalhardoLima/sinew>
-🔭 **Live explorer (navigate by meaning):** <https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer>
+🔭 **Live explorer (navigate by meaning, or search a theme):** <https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer>
 
 [![Sinew explorer demo](https://raw.githubusercontent.com/LucasGalhardoLima/sinew/main/docs/demo.gif)](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)
 
@@ -56,7 +56,8 @@ silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictio
 - **Tier 1 — Facts:** verse text, canonical IDs, book metadata, versification map.
 - **Tier 2 — Sourced connections:** every edge has `type + source + weight (+ review_status)`.
 - **Tier 3 — Derived (optional):** computed embeddings/similarity, *"computed, not authoritative"* —
-  powers the live explorer's meaning-terrain; built opt-in, never joined to the fact tables.
+  powers the live explorer's meaning-terrain **and its in-browser theme search**; built opt-in, never
+  joined to the fact tables (and not part of this published dataset, which is Tier-1/2 only).
 
 ## What's in v1
 
@@ -133,5 +134,6 @@ gaps) is **flagged in `review_status`, never dropped** — the "no silent failur
 underlying Bible text is public domain. Exact retrieval URLs + sha256 pins are in `sources.lock.json`
 and the `dataset_meta` table.
 
-**Roadmap (P1):** typed NT→OT quotations (Turpie 1868, classified A–E); deeper Tier-3 semantic
-search; original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.
+**Roadmap (P1):** typed NT→OT quotations (Turpie 1868, classified A–E); deeper Tier-3 semantic search
+beyond the explorer (a query/MCP-layer semantic endpoint — the explorer's in-browser theme search
+already ships); original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.

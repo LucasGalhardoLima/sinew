@@ -12,6 +12,7 @@ tags:
   - knowledge-graph
   - cross-references
   - visualization
+  - semantic-search
 ---
 
 # Sinew Explorer
@@ -23,7 +24,11 @@ open, *sourced* Bible connection-graph. Two linked views:
   embedding — **Tier 3, not authoritative**). The field is calm by default; **hover a chapter to
   reveal only its sourced cross-references** (Tier 2), coloured teal→gold by meaning-distance — a
   **gold link is *surprising*** (a sourced connection that is right yet spans a wide meaning gap).
-  A **meaning⇄kinship** toggle re-lays-out the same chapters from the cross-ref graph.
+  A **meaning⇄kinship** toggle re-lays-out the same chapters from the cross-ref graph. **Search** a
+  reference (`Isaiah 53`, `John 3:16`) to jump to a chapter, or **⌕ by meaning** to search a *theme*
+  (`forgiveness`, `covenant`): the phrase is embedded **in your browser** with the same model
+  (`Xenova/all-mpnet-base-v2` via transformers.js, lazy-loaded once) and ranked against the chapters,
+  lighting up the nearest dozen — **Tier 3, computed** *(one-time ~100 MB model download)*.
 - **Chord view (`chord.html`).** The 66 books on a ring, isolating the ~129k cross-Testament arcs;
   click a book to drill to verse level, hover an arc to read both verse texts and its provenance.
 
