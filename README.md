@@ -27,7 +27,7 @@ carrying its provenance.
 [![🤗 Live explorer](https://img.shields.io/badge/%F0%9F%A4%97%20Space-explorer-blue)](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC--BY--4.0-green)](LICENSE)
 
-**[🔭 Open the live explorer →](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)** — navigate the canon by *meaning*; hover any chapter to reveal its sourced cross-references. &nbsp;**[🗃️ Get the dataset →](https://huggingface.co/datasets/LucasGalhardoLima/sinew)**
+**[🔭 Open the live explorer →](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)** — navigate the canon by *meaning*; hover any chapter to reveal its sourced cross-references, jump to any reference, or search a theme to light up its nearest chapters. &nbsp;**[🗃️ Get the dataset →](https://huggingface.co/datasets/LucasGalhardoLima/sinew)**
 
 [![Sinew explorer demo](docs/demo.gif)](https://huggingface.co/spaces/LucasGalhardoLima/sinew-explorer)
 
@@ -64,9 +64,10 @@ Two surfaces ship on top of the dataset: a read-only **MCP server** (grounded ag
 diagram**, the canon connecting to itself. See below.
 
 **Roadmap (P1, de-risked spikes, not in v1):** typed NT→OT quotations (Turpie 1868, classified
-A–E); deeper Tier-3 semantic search / discovery; original-language (Macula) lemma/morphology; more
-PD translations + multilingual alignment. *(The Tier-3 meaning-terrain map already ships as an
-opt-in view — see [Visualize](#visualize-the-telescope).)*
+A–E); deeper Tier-3 semantic search / discovery beyond the explorer (a query/MCP-layer semantic
+endpoint); original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.
+*(The Tier-3 meaning-terrain map **and in-browser theme search** already ship as an opt-in view — see
+[Visualize](#visualize-the-telescope).)*
 
 ## Schema
 
@@ -162,7 +163,8 @@ make viz-serve    # serve dist/viz/ so click-to-drill-down works -> http://local
 ```
 
 Two linked views (each works offline; `make viz` needs **no** ML deps — it reads the precomputed
-`meaning.json`):
+`meaning.json`). The optional in-browser **theme search** is the one networked extra — it lazy-loads a
+model on first use (see below):
 
 - **`index.html` — meaning view (hero).** Every chapter is placed by what it *means* (a computed text
   embedding — **Tier 3, not authoritative**). The field is **calm by default — no arcs**; **hover a
@@ -171,6 +173,12 @@ Two linked views (each works offline; `make viz` needs **no** ML deps — it rea
   with a dashed halo on its nearest meaning-neighbors; everything else dims. Click to pin. A
   **meaning⇄kinship** toggle re-lays-out the same chapters from the cross-ref graph (OT/NT separation
   z≈0.6 in meaning vs ≈1.7 in kinship — the terrain clusters by genre/theme, not Testament).
+  **Search** a reference (`Isaiah 53`, `John 3:16`) to jump straight to a chapter, or press **⌕ by
+  meaning** to search a *theme* (`forgiveness`, `covenant`, `exile`): the phrase is embedded **in your
+  browser** with the *same* model as the terrain (`Xenova/all-mpnet-base-v2` via transformers.js,
+  lazy-loaded once) and ranked against the chapters by cosine, lighting up the nearest dozen with a
+  ranked panel — **Tier 3, computed, not authoritative**. (Theme search needs the served explorer — the
+  one-time model download is ~100 MB, then browser-cached.)
 - **`chord.html` — radial chord diagram.** The 66 books on a ring; the default view isolates the
   ~129k **cross-Testament** arcs. Click a book to drill into its verse-level links; hover any arc to
   read **both** verse texts and its provenance. D3 is **vendored and pinned** (`sources.lock.json`).
@@ -190,7 +198,10 @@ make embed                  # reads dist/sinew.sqlite -> meaning.json + Tier-3 d
 
 It embeds every WEB verse (`all-mpnet-base-v2`), mean-pools to chapter vectors, lays out the meaning
 (t-SNE) and kinship (spectral) terrains, and records **each chapter's top-K sourced cross-references +
-nearest meaning-neighbors** for the on-hover reveal. It also writes additive `derived_*` tables
+nearest meaning-neighbors** for the on-hover reveal. For the explorer's **theme search** it also exports
+the chapter vectors as a compact node-aligned **int8 binary** (`chapter_vecs.i8.bin`, ~0.9 MB, one
+global scale so cosine ranking stays a plain dot product), advertised in `meaning.json`'s `meta.vecs`.
+It also writes additive `derived_*` tables
 (`derived_meta` / `_chapter_layout` / `_chapter_vec` / `_surprising` = the most surprising sourced
 links by `log1p(votes) × cos_distance`, all `tier=3`) for local/power use — **never joined to the
 Tier-1/2 fact tables**.
