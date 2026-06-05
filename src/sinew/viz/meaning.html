@@ -28,9 +28,19 @@
       border-radius: 7px; padding: 6px 10px; font-size: 13px; width: min(46vw, 340px); }
     #search::placeholder { color: var(--muted); }
     #search:focus { outline: none; border-color: var(--accent); }
+    #theme { border-color: var(--accent); color: var(--gold); }
     #searchMsg { font-size: 12.5px; color: var(--muted); }
     #searchMsg.warn { color: #e0a98a; }
     #status { color: var(--muted); font-size: 12.5px; }
+    #themePanel { position: fixed; right: 24px; top: 120px; width: 232px; max-height: 64vh; overflow:auto;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; }
+    #themePanel h3 { margin: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--gold); }
+    #themePanel .sub { margin: 0 0 8px; font-size: 11px; color: var(--muted); line-height: 1.4; }
+    #themePanel .hit { display: flex; justify-content: space-between; gap: 8px; padding: 4px 6px;
+      border-radius: 6px; cursor: pointer; font-size: 12.5px; }
+    #themePanel .hit:hover { background: #ffffff10; }
+    #themePanel .hit .lbl { color: var(--ink); }
+    #themePanel .hit .sc { color: var(--muted); font-variant-numeric: tabular-nums; }
     #stage { display: grid; place-items: center; padding: 8px; }
     svg { width: 96vw; max-width: 1280px; height: auto; display: block; cursor: crosshair; }
     .node { stroke: #0f1115; stroke-width: .4; }
@@ -61,15 +71,17 @@
        reveal only its sourced OpenBible cross-references</b> (Tier&nbsp;2, attributed not asserted),
        where <span class="gold">gold marks a surprising link</span> spanning a wide meaning gap, and a
        dashed halo marks its nearest neighbors in meaning. Click to pin; toggle the meaning⇄kinship
-       layout. Or <b>search a reference</b> (e.g. <em>Isaiah 53</em>, <em>John 3:16</em>) to jump
-       straight to a chapter. · <a href="chord.html">Switch to the chord view →</a></p>
+       layout. <b>Search a reference</b> (<em>Isaiah 53</em>, <em>John 3:16</em>) to jump to a chapter, or
+       <b>by meaning</b> a theme (<em>forgiveness</em>, <em>covenant</em>) to light up its nearest chapters
+       — embedded in your browser, Tier&nbsp;3 (computed). · <a href="chord.html">Switch to the chord view →</a></p>
   </header>
   <div id="controls">
     <div id="search-wrap">
       <input id="search" type="search" autocomplete="off" spellcheck="false"
-             placeholder="Find a chapter or verse — e.g. Isaiah 53, John 3:16"
-             aria-label="Find a chapter or verse">
+             placeholder="Verse, chapter, or theme — Isaiah 53 · John 3:16 · forgiveness"
+             aria-label="Find a verse, chapter, or theme">
       <button id="go" title="Jump to this reference">Go</button>
+      <button id="theme" title="Search by meaning (loads a model in your browser, one-time)">⌕ by meaning</button>
     </div>
     <button id="toggle">Layout: MEANING ⇄ KINSHIP</button>
     <span id="searchMsg" role="status" aria-live="polite"></span>
@@ -77,6 +89,7 @@
   </div>
   <div id="stage"><svg id="viz" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet"></svg></div>
   <div id="legend"></div>
+  <div id="themePanel" hidden></div>
   <div id="tooltip" class="tip" hidden></div>
 
   <!--SINEW_MEANING-->

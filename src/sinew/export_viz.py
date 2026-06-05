@@ -144,6 +144,9 @@ def export_viz(sqlite_path=None, out_dir=None):
     if meaning_json is not None:                       # copy verbatim so served bytes == committed bytes
         (out_dir / "data").mkdir(parents=True, exist_ok=True)
         shutil.copyfile(MEANING_SRC, out_dir / "data" / "meaning.json")
+        vecs = (meaning_json.get("meta") or {}).get("vecs")    # int8 chapter vectors for theme search
+        if vecs and (MEANING_SRC.parent / vecs["file"]).exists():
+            shutil.copyfile(MEANING_SRC.parent / vecs["file"], out_dir / "data" / vecs["file"])
     return {
         "books": len(books_json["nodes"]),
         "edges": len(books_json["edges"]),

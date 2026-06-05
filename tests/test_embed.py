@@ -22,6 +22,23 @@ def test_mean_pool_is_unit_norm_and_nan_safe():
     assert not np.isnan(z).any() and np.linalg.norm(z) == 0
 
 
+def test_quantize_int8_is_lossless_for_ranking():
+    rng = np.random.default_rng(0)
+    C = rng.standard_normal((40, 16)).astype(np.float32)
+    C /= np.linalg.norm(C, axis=1, keepdims=True)           # unit-normalized chapter vecs
+    q, scale = embed.quantize_int8(C)
+    assert q.dtype == np.int8 and q.shape == C.shape and np.abs(q).max() <= 127
+    deq = q.astype(np.float32) * scale
+    # dequantized cosine ~ original (uniform global scale)
+    cos = np.einsum("ij,ij->i", deq, C) / (np.linalg.norm(deq, axis=1) * np.linalg.norm(C, axis=1))
+    assert cos.min() > 0.99
+    # a uniform scale leaves the cosine *ranking* (query vs chapters) intact (up to rounding)
+    qv = C[0]
+    a, b = C @ qv, q.astype(np.float32) @ qv
+    assert np.argmax(a) == np.argmax(b)
+    assert np.corrcoef(a, b)[0, 1] > 0.999
+
+
 def test_surprise_score_is_strength_times_distance():
     assert embed.surprise_score(10, 0.5) == pytest.approx(math.log1p(10) * 0.5)
     assert embed.surprise_score(100, 0.5) > embed.surprise_score(10, 0.5)   # monotonic in votes

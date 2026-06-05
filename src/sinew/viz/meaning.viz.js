@@ -30,6 +30,7 @@
 
   let M = null, mode = "meaning", circs = [], secLabels = [], active = -1, pinned = false;
   let labelIndex = null, maxChap = null, inputEl = null, msgEl = null;   // search / jump-to state
+  let themeBtn = null, panelEl = null, embedder = null, vecs = null, themeBusy = false, lastTheme = null;
 
   init();
 
@@ -54,10 +55,13 @@
     msgEl = document.getElementById("searchMsg");
     buildLabelIndex();
     inputEl.addEventListener("keydown", ev => {
-      if (ev.key === "Enter") { ev.preventDefault(); runSearch(); }
-      else if (ev.key === "Escape") { inputEl.value = ""; searchMsg(""); pinned = false; clearReveal(); }
+      if (ev.key === "Enter") { ev.preventDefault(); ev.shiftKey ? runTheme() : runSearch(); }
+      else if (ev.key === "Escape") { inputEl.value = ""; searchMsg(""); clearTheme(); pinned = false; clearReveal(); }
     });
     document.getElementById("go").addEventListener("click", runSearch);
+    themeBtn = document.getElementById("theme");
+    panelEl = document.getElementById("themePanel");
+    themeBtn.addEventListener("click", runTheme);
 
     updateStatus();
   }
@@ -101,6 +105,7 @@
       if (k) { s.el.setAttribute("x", (sx / k).toFixed(1)); s.el.setAttribute("y", (sy / k).toFixed(1)); }
     });
     if (active >= 0) drawReveal(active);        // keep the revealed arcs aligned after a layout swap
+    else if (lastTheme) applyThemeHighlight(lastTheme.order, lastTheme.sims);
   }
 
   // ---- reveal one chapter's connections ----
@@ -174,8 +179,8 @@
 
   function onClick(ev) {
     const i = nearestNode(ev);
-    if (i < 0 || (pinned && i === active)) { pinned = false; clearReveal(); return; }
-    pinned = true; drawReveal(i); placeTip(ev);
+    if (i < 0 || (pinned && i === active)) { pinned = false; clearTheme(); clearReveal(); return; }
+    clearTheme(); pinned = true; drawReveal(i); placeTip(ev);
   }
 
   // ---- chrome ----
@@ -305,9 +310,10 @@
   function runSearch() {
     const q = inputEl.value;
     const res = parseQuery(q);
-    if (!res) { searchMsg(`No match for “${q.trim()}”. Try “Isaiah 53” or “John 3:16”.`, true); return; }
+    if (!res) { searchMsg(`No reference matched “${q.trim()}”. Press “⌕ by meaning” to search it as a theme.`, true); return; }
     if (res.i === undefined) { searchMsg(res.error, true); return; }
     searchMsg("");
+    clearTheme();
     pinned = true;
     drawReveal(res.i);
     placeTipAtNode(res.i);
@@ -342,6 +348,108 @@
       ring.setAttribute("stroke-opacity", (0.9 * (1 - k)).toFixed(2));
       if (k < 1) requestAnimationFrame(step); else gFlash.removeChild(ring);
     })(t0);
+  }
+
+  // ---- theme search (semantic; Tier-3, computed in the browser) ----
+  // Embed the typed theme with the SAME model as the terrain (Xenova/all-mpnet-base-v2, mean-pooled +
+  // normalized) via transformers.js, then rank chapters by dot product against the shipped int8 vectors
+  // (meta.vecs; uniform scale keeps the ranking exact, cosine = dot*scale). Lazy: the model + vectors
+  // load only on first use, so the calm default view stays light and vendored/offline. Served-only
+  // (needs fetch) — on file:// it points you at the hosted explorer.
+  const TJS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6";
+  const THEME_K = 12;
+
+  async function ensureAssets(report) {
+    const v = M.meta && M.meta.vecs;
+    if (!v) { searchMsg("Theme search needs chapter vectors (rebuild with `make embed`).", true); return false; }
+    if (!CAN_FETCH) { searchMsg("Theme search runs on the hosted explorer — try `make viz-serve` or the Space.", true); return false; }
+    if (!vecs) {
+      report("loading chapter vectors…");
+      const buf = await fetch("data/" + v.file).then(r => { if (!r.ok) throw new Error("vectors " + r.status); return r.arrayBuffer(); });
+      vecs = new Int8Array(buf);
+      if (vecs.length !== v.n * v.dim) throw new Error("vector size mismatch");
+    }
+    if (!embedder) {
+      report("loading the meaning model (one-time download)…");
+      const { pipeline, env } = await import(TJS_URL);
+      env.allowLocalModels = false;
+      embedder = await pipeline("feature-extraction", v.hub_id, {
+        dtype: "q8",
+        progress_callback: p => {
+          if (p && p.status === "progress" && /\.onnx/.test(p.file || "")) report(`downloading model… ${Math.round(p.progress || 0)}%`);
+        },
+      });
+    }
+    return true;
+  }
+
+  async function runTheme() {
+    const q = inputEl.value.trim();
+    if (!q) { searchMsg("Type a theme (e.g. forgiveness, covenant, exile), then press “⌕ by meaning”."); return; }
+    if (themeBusy) return;
+    themeBusy = true; themeBtn.disabled = true;
+    try {
+      if (!(await ensureAssets(searchMsg))) return;
+      searchMsg("embedding…");
+      const out = await embedder(q, { pooling: "mean", normalize: true });
+      const qf = out.data, { n, dim, scale } = M.meta.vecs;
+      const sims = new Float32Array(n);
+      for (let i = 0; i < n; i++) { let s = 0; const off = i * dim; for (let d = 0; d < dim; d++) s += qf[d] * vecs[off + d]; sims[i] = s; }
+      const order = Array.from(sims.keys()).sort((a, b) => sims[b] - sims[a]).slice(0, THEME_K);
+      searchMsg("");
+      showTheme(q, order, sims, scale);
+    } catch (e) {
+      searchMsg("Theme search couldn't load (needs network for the model): " + ((e && e.message) || e), true);
+    } finally {
+      themeBusy = false; themeBtn.disabled = false;
+    }
+  }
+
+  function showTheme(q, order, sims, scale) {
+    pinned = true; active = -1;                       // theme owns the canvas; block hover-clobber
+    hideTip();                                        // drop any lingering single-chapter tooltip
+    lastTheme = { q, order, sims, scale };
+    applyThemeHighlight(order, sims);
+    const rows = order.map((i, r) =>
+      `<div class="hit" data-i="${i}" title="show ${esc(M.nodes[i][5])}'s cross-references">` +
+      `<span class="lbl">${r + 1}. ${esc(M.nodes[i][5])}</span><span class="sc">${(sims[i] * scale).toFixed(2)}</span></div>`).join("");
+    panelEl.innerHTML = `<h3>Theme · “${esc(q)}”</h3>` +
+      `<p class="sub">${order.length} nearest chapters in meaning · cosine · Tier-3 <em>computed, not authoritative</em></p>${rows}`;
+    panelEl.hidden = false;
+    panelEl.querySelectorAll(".hit").forEach(el => el.addEventListener("click", () => {
+      const i = +el.getAttribute("data-i"); clearTheme(); pinned = true; drawReveal(i); placeTipAtNode(i); flash(i);
+    }));
+    statusEl.textContent = `Theme: “${q}” — ${order.length} nearest in meaning (Tier-3, computed) · Esc to clear`;
+  }
+
+  function applyThemeHighlight(order, sims) {
+    clear(gArcs); clear(gHalo);
+    const inTop = new Set(order);
+    const smin = sims[order[order.length - 1]], span = (sims[order[0]] - smin) || 1;
+    circs.forEach((c, k) => {
+      if (inTop.has(k)) {
+        const t = (sims[k] - smin) / span;            // 0..1 within the top-K
+        c.setAttribute("fill-opacity", (0.55 + 0.45 * t).toFixed(2));
+        c.setAttribute("r", (rad(M.nodes[k]) + 1.5 + 3.5 * t).toFixed(1));
+      } else {
+        c.setAttribute("fill-opacity", "0.06");
+        c.setAttribute("r", rad(M.nodes[k]).toFixed(2));
+      }
+    });
+    order.slice(0, 5).forEach(i => {                  // gold halo on the strongest few
+      const [x, y] = coords(i), h = mk("circle");
+      h.setAttribute("cx", x); h.setAttribute("cy", y); h.setAttribute("r", (rad(M.nodes[i]) + 5).toFixed(1));
+      h.setAttribute("fill", "none"); h.setAttribute("stroke", "#ffe6a7"); h.setAttribute("stroke-opacity", "0.6");
+      gHalo.appendChild(h);
+    });
+  }
+
+  function clearTheme() {
+    if (!lastTheme) return;
+    lastTheme = null;
+    if (panelEl) panelEl.hidden = true;
+    clear(gArcs); clear(gHalo);
+    circs.forEach((c, k) => { c.setAttribute("fill-opacity", "0.5"); c.setAttribute("r", rad(M.nodes[k]).toFixed(2)); });
   }
 
   // ---- helpers ----

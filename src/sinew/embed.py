@@ -30,6 +30,7 @@ from .books import BOOK_NUM, NT, SECTIONS, section, section_color
 
 MODEL = "all-mpnet-base-v2"
 DIM = 768
+VEC_FILE = "chapter_vecs.i8.bin"        # int8 chapter vectors (node order) for in-browser theme search
 CANVAS = (60, 1140, 60, 740)            # x_lo, x_hi, y_lo, y_hi (viewBox 1200x760, landscape terrain)
 LINKS_K = 20                            # per chapter: top-K sourced cross-ref neighbors revealed on select
 NEAR_N = 6                              # per chapter: nearest meaning-neighbors (Tier-3 on-select hint)
@@ -61,6 +62,16 @@ def mean_pool(vecs):
 def surprise_score(votes, cos_dist):
     """A sourced edge is 'surprising' when strongly attested (votes) yet spans a wide meaning gap."""
     return float(np.log1p(votes) * cos_dist)
+
+
+def quantize_int8(C):
+    """Quantize L2-normalized chapter vectors to int8 with ONE global scale. A uniform scale leaves the
+    cosine *ranking* of chapters (for any query) exact up to rounding, so the explorer can rank by a
+    plain int8 dot product. Returns (q [n,dim] int8, scale) with unit_component ≈ q * scale."""
+    C = np.asarray(C, dtype=np.float32)
+    maxabs = float(np.max(np.abs(C))) or 1.0
+    q = np.clip(np.round(C / maxabs * 127.0), -127, 127).astype(np.int8)
+    return q, maxabs / 127.0
 
 
 def diversify(ranked, cap=2, limit=150):
@@ -246,6 +257,18 @@ def _embed(texts):
     return V
 
 
+def write_chapter_vecs(C, out_dir):
+    """Write the int8 chapter vectors (flat, row-major, node order) the explorer fetches for theme
+    search, and return the meta block advertising them in meaning.json. The query is embedded in-browser
+    with the *same* model (Xenova/all-mpnet-base-v2, mean-pooled + normalized) and ranked by dot product."""
+    q, scale = quantize_int8(C)
+    n, dim = q.shape
+    (out_dir / VEC_FILE).write_bytes(q.tobytes())
+    return {"file": VEC_FILE, "dtype": "int8", "n": int(n), "dim": int(dim), "scale": float(scale),
+            "order": "node", "model": MODEL, "hub_id": "Xenova/all-mpnet-base-v2",
+            "pool": "mean", "normalized": True}
+
+
 def build_meaning_json(nodes, mpx, mpy, kpx, kpy, deg, links, near, sep_m, sep_k):
     """The committed, torch-free artifact the front-end reads (deterministic key order).
 
@@ -334,6 +357,7 @@ def build(db_path=None, out_json=None):
 
     meaning = build_meaning_json(nodes, mpx, mpy, kpx, kpy, deg, links, near, sep_m, sep_k)
     out_json.parent.mkdir(parents=True, exist_ok=True)
+    meaning["meta"]["vecs"] = write_chapter_vecs(C, out_json.parent)   # int8 vectors for theme search
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(meaning, f, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     write_derived(db_path, nodes, mpx, mpy, kpx, kpy, C, surprises)
