@@ -3,6 +3,7 @@ pretty_name: "Sinew — sourced Bible connection-graph"
 license: cc-by-4.0
 language:
   - en
+  - pt
 tags:
   - bible
   - cross-references
@@ -40,7 +41,7 @@ foundational work — text parsing, canonical IDs, versification reconciliation,
 lookup — and worse, **derives connections from text similarity, which is itself an interpretive
 assumption** (similarity ≠ connection). Sinew separates **fact from interpretation**: every
 connection is `type + source + weight`, the dataset *attributes, never asserts*, and nothing is
-silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictionlessly redistributable.
+silently dropped. v1 is entirely **public-domain or CC-BY text + CC-BY data** → frictionlessly redistributable, with attribution.
 
 ## The three tiers (never blurred)
 
@@ -53,7 +54,7 @@ silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictio
 
 | | |
 |---|---|
-| **Text** | World English Bible (WEB), public domain, 31,095 verses / 1,189 chapters / 66 books |
+| **Text** | World English Bible (WEB, English, public domain) — canonical, 31,095 verses / 1,189 chapters / 66 books. Plus Bíblia Livre (BLIVRE, pt-BR, CC BY 4.0 Brasil) and Nova Bíblia de Acesso Livre (NVA, pt-BR, CC BY-SA 4.0), each ~99.9% coverage (gaps are well-known textual/versification variants, e.g. Rom 16:24-27) |
 | **Canonical IDs** | `Book.Chapter.Verse` (e.g. `John.3.16`), **eng/KJV** numbering base |
 | **Versification** | `eng` (identity) + `org` (Hebrew) per verse, via the Copenhagen Alliance spec |
 | **Connections** | OpenBible cross-references → **613,998** Tier-2 edges (`type=cross_reference`, `weight=votes`) |
@@ -65,7 +66,8 @@ diagram**, the canon connecting to itself. See below.
 
 **Roadmap (P1, de-risked spikes, not in v1):** typed NT→OT quotations (Turpie 1868, classified
 A–E); deeper Tier-3 semantic search / discovery beyond the explorer (a query/MCP-layer semantic
-endpoint); original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.
+endpoint); original-language (Macula) lemma/morphology; more translations + multilingual alignment
+beyond BLIVRE + NVA (pt-BR, shipped).
 *(The Tier-3 meaning-terrain map **and in-browser theme search** already ship as an opt-in view — see
 [Visualize](#visualize-the-telescope).)*
 
@@ -75,7 +77,7 @@ See [`docs/schema.md`](docs/schema.md) for the full data dictionary. Tables:
 
 - **`verses`** — `verse_id (PK)`, `book`, `chapter`, `verse`, `canonical_order`, `tier=1` *(stable, translation-independent address)*
 - **`books`** — `book (PK)`, `name`, `testament`, `book_number`, `chapter_count`
-- **`texts`** — `verse_id`, `translation`, `text`, `tier=1` *(PK `verse_id+translation`; v1: WEB only)*
+- **`texts`** — `verse_id`, `translation`, `text`, `tier=1` *(PK `verse_id+translation`; `WEB`, `BLIVRE`, or `NVA`)*
 - **`versification_map`** — `verse_id`, `scheme ∈ {eng,org}`, `scheme_ref`, `status ∈ {present,merged,split}`, `tier=1`
 - **`connections`** — `source_verse_id`, `target_verse_id`, `type`, `source`, `weight`, `confidence`, `review_status`, `turpie_class (NULL in v1)`, `tier=2`
 - **`dataset_meta`** — `key`, `value` *(version, build date, source pins, license, base scheme)*
@@ -106,8 +108,10 @@ the verse set; an edge whose endpoint doesn't resolve (≈311, versification gap
 import sqlite3
 con = sqlite3.connect("sinew.sqlite")
 
-# text of a verse
-con.execute("SELECT text FROM texts WHERE verse_id='John.3.16'").fetchone()
+# text of a verse (three translations now -- always filter, or you'll get whichever row SQLite hands back first)
+con.execute("SELECT text FROM texts WHERE verse_id='John.3.16' AND translation='WEB'").fetchone()
+con.execute("SELECT text FROM texts WHERE verse_id='John.3.16' AND translation='BLIVRE'").fetchone()
+con.execute("SELECT text FROM texts WHERE verse_id='John.3.16' AND translation='NVA'").fetchone()
 
 # its strongest cross-references (with provenance)
 con.execute("""SELECT target_verse_id, source, weight FROM connections

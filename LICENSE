@@ -11,12 +11,40 @@ REQUIRED ATTRIBUTION
 Cross-reference connections are derived from OpenBible.info and are licensed CC-BY. Any
 redistribution or use MUST credit:
   "Cross-references © OpenBible.info, CC-BY (https://www.openbible.info/labs/cross-references/)."
-and acknowledge this dataset:
+The BLIVRE (pt-BR) text in the `texts` table is licensed CC BY 4.0 Brasil. Any redistribution
+or use of that text MUST credit:
+  "Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE), Copyright ©
+  Diego Santos, Mario Sérgio, e Marco Teles, http://sites.google.com/site/biblialivre/ —
+  Licença Creative Commons Atribuição 4.0 Brasil."
+The NVA (pt-BR) text in the `texts` table is licensed CC BY-SA 4.0. Any redistribution or use
+of that text MUST credit:
+  "Todas as Escrituras em português citadas (tradução NVA) são da Nova Bíblia de Acesso Livre,
+  https://www.biblianva.com.br/ — Licença Creative Commons Atribuição-CompartilhaIgual 4.0."
+In all cases, also acknowledge this dataset:
   "Sinew — sourced Bible connection-graph (CC-BY-4.0)."
+
+NOTE ON NVA / CC BY-SA — SCOPE OF SHAREALIKE (resolved 2026-08-26): CC BY-SA 4.0's ShareAlike
+clause (Section 3(b)) only triggers on "Adapted Material" — Section 1 defines that as material
+"in which the Licensed Material is translated, altered, arranged, transformed, or otherwise
+modified." CC's own FAQ (creativecommons.org/faq, "Combining and adapting CC material") states a
+collection where licensed material appears "in unmodified form alongside other material" is NOT
+an adaptation, and ShareAlike does not extend to the rest of such a collection. `text_pt.load_nva`
+does not translate/alter/transform the NVA text — it whitespace-normalizes and subsets which
+verses are included (by membership in the WEB-derived canonical set), verbatim otherwise. On that
+basis, the NVA text sits in this compilation as a Collection component, not an Adaptation: the
+CC-BY-4.0 compilation license above stands as written, and ShareAlike binds only the NVA text
+itself (any future adaptation of the NVA text specifically — e.g. rewording it — would need to
+carry CC BY-SA 4.0 forward). This is a careful non-lawyer reading of the primary sources, not
+legal advice — revisit if the NVA text ever gets transformed rather than merely subset/included.
 
 UNDERLYING TEXT
 ---------------
 The World English Bible (WEB) text is in the PUBLIC DOMAIN and carries no usage restrictions.
+The Bíblia Livre (BLIVRE, N4 edition) text is licensed CC BY 4.0 Brasil — see REQUIRED
+ATTRIBUTION above. Source: https://github.com/blivre/BibliaLivre (release 2018.2.0).
+The Nova Bíblia de Acesso Livre (NVA) text is licensed CC BY-SA 4.0 — see REQUIRED ATTRIBUTION
+above (including the ShareAlike-scope note). Source: https://www.biblianva.com.br/,
+fetched via https://github.com/Projeto-Euaggelion/biblia.publica (aggregator).
 
 VERSIFICATION
 -------------

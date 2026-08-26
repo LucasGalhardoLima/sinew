@@ -26,7 +26,7 @@ Canonical base: **eng/KJV** (`SINEW_CANONICAL_BASE`, default `eng`). `verse_id` 
 | column | type | notes |
 |---|---|---|
 | `verse_id` | TEXT | FK → `verses.verse_id` |
-| `translation` | TEXT | `WEB` in v1 |
+| `translation` | TEXT | `WEB` (English, canonical — defines the `verses` set), `BLIVRE` (pt-BR, ~99.9% coverage; gap is the well-known TR-vs-critical-text disputed-verse set, e.g. Rom 16:24-27), or `NVA` (pt-BR, ~99.9% coverage; gap is 4 known textual/versification variants, e.g. Rom 16:24-27, 3 John 1:14-15) — see `text_pt.py` |
 | `text` | TEXT | whitespace-normalized verse text |
 | `tier` | INTEGER | `1` |
 | | | PK = (`verse_id`, `translation`) |
@@ -63,5 +63,9 @@ keep an `unresolved_*` `review_status` (flagged, not dropped).
 
 ## `dataset_meta` — provenance
 Key/value: `name`, `version`, `build_date`, `canonical_base`, `license`, `verse_count`,
-`text_count`, `connection_count`, `connection_unresolved`, `versification_schemes`,
+`text_count`, `text_translations`, `text_blivre_coverage` (`inserted/verse_count`),
+`text_blivre_skipped` (JSON: `parsed`/`unaddressable`/`placeholder` counts, see `text_pt.py`),
+`text_nva_coverage` (`inserted/verse_count`), `text_nva_skipped` (JSON: `parsed`/`unaddressable`
+counts, see `text_pt.py`),
+`connection_count`, `connection_unresolved`, `versification_schemes`,
 `source_pins` (per-source sha256), `attribution`.

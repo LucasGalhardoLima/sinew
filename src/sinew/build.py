@@ -8,6 +8,7 @@ import os, json, sqlite3, hashlib, datetime, pathlib
 from . import __version__
 from .books import BOOK_NUM, BOOK_NAME, testament, parse_id
 from .text import load_web
+from .text_pt import load_blivre, load_nva
 from .versification import build_scheme_map
 from .connections import load_cross_references
 
@@ -15,7 +16,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw"
 DIST = ROOT / "dist"
 CANONICAL_BASE = os.environ.get("SINEW_CANONICAL_BASE", "eng")   # eng (default) | org
-LICENSE = "CC-BY-4.0 (compilation; attribution to OpenBible) + Public Domain text"
+LICENSE = ("CC-BY-4.0 (compilation; attribution to OpenBible) + Public Domain WEB text "
+           "+ CC BY 4.0 Brasil BLIVRE text (attribution to Diego Santos, Mario Sérgio, Marco Teles) "
+           "+ CC BY-SA 4.0 NVA text (attribution to the NVA translation team, biblianva.com.br)")
 
 SCHEMA = """
 CREATE TABLE verses (
@@ -110,6 +113,12 @@ def main():
     verses, texts, counts = load_web(RAW / "web.json")
     verse_set = {f"{b}.{c}.{v}" for b, c, v, _ in verses}
 
+    blivre_texts, blivre_stats = load_blivre(RAW / "blivre_n4_vpl.txt", verse_set, counts)
+    texts += blivre_texts
+
+    nva_texts, nva_stats = load_nva(RAW / "nva_pt.json", verse_set, counts)
+    texts += nva_texts
+
     # books table (Tier-1 metadata)
     chapters_per_book = {}
     for b, c, _v, _o in verses:
@@ -130,13 +139,19 @@ def main():
         ("license", LICENSE),
         ("verse_count", str(len(verses))),
         ("text_count", str(len(texts))),
-        ("text_translations", "WEB"),
+        ("text_translations", "WEB,BLIVRE,NVA"),
+        ("text_blivre_coverage", f"{blivre_stats['inserted']}/{len(verses)}"),
+        ("text_blivre_skipped", json.dumps({k: v for k, v in blivre_stats.items() if k != "inserted"})),
+        ("text_nva_coverage", f"{nva_stats['inserted']}/{len(verses)}"),
+        ("text_nva_skipped", json.dumps({k: v for k, v in nva_stats.items() if k != "inserted"})),
         ("connection_count", str(len(edges))),
         ("connection_unresolved", str(stats["unresolved"])),
         ("versification_schemes", "eng,org"),
         ("versification_flagged", str(len(vflagged))),
         ("source_pins", json.dumps({k: v["sha256"] for k, v in lock["sources"].items()})),
-        ("attribution", "Cross-references: OpenBible.info (CC-BY). Text: World English Bible (Public Domain)."),
+        ("attribution", "Cross-references: OpenBible.info (CC-BY). Text: World English Bible (Public Domain); "
+                        "Bíblia Livre (BLIVRE), CC BY 4.0 Brasil — Diego Santos, Mario Sérgio, Marco Teles; "
+                        "Nova Bíblia de Acesso Livre (NVA), CC BY-SA 4.0 — biblianva.com.br."),
     ]
 
     db = DIST / "sinew.sqlite"
@@ -145,6 +160,10 @@ def main():
 
     print(f"verses={len(verses):,}  texts={len(texts):,}  versification_rows={len(vmap):,}"
           f"  (flagged map entries={len(vflagged)})")
+    print(f"BLIVRE: parsed={blivre_stats['parsed']:,}  inserted={blivre_stats['inserted']:,}"
+          f"  unaddressable={blivre_stats['unaddressable']:,}  placeholder={blivre_stats['placeholder']:,}")
+    print(f"NVA: parsed={nva_stats['parsed']:,}  inserted={nva_stats['inserted']:,}"
+          f"  unaddressable={nva_stats['unaddressable']:,}")
     print(f"connections: rows={stats['rows']:,} -> edges={len(edges):,}"
           f"  (ok={stats['ok']:,}  unresolved={stats['unresolved']:,}"
           f"  self-skipped={stats['self_skipped']:,}  bad_rows={stats['bad_rows']:,})")

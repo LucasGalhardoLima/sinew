@@ -44,6 +44,24 @@
       "license": "CC-BY",
       "retrieved": "2026-06-02"
     },
+    "blivre_pt_text": {
+      "file": "data/raw/blivre_n4_vpl.txt",
+      "sha256": "a87a783de516ade9fa5c9101c0d5648f9b16f5d08cbf453e914c5ab9517e6665",
+      "url": "https://github.com/blivre/BibliaLivre/releases/download/2018.2.0/bliv-n4_vpl.zip",
+      "homepage": "https://sites.google.com/site/biblialivre/",
+      "description": "Bíblia Livre (BLIVRE), N4 edition (Nestle 1904/Texto Crítico Greek NT, Westminster Leningrad Codex Hebrew OT), pt-BR, verse-per-line format",
+      "license": "CC BY 4.0 Brasil — Diego Santos, Mario Sérgio, Marco Teles",
+      "retrieved": "2026-08-11"
+    },
+    "nva_pt_text": {
+      "file": "data/raw/nva_pt.json",
+      "sha256": "a6b0270c8545545f3f0dc1db37cb55bfad8d3ead3e283cda2dd2011d342ee7b8",
+      "url": "https://github.com/Projeto-Euaggelion/biblia.publica/tree/main/versoes/nva/json",
+      "homepage": "https://www.biblianva.com.br/",
+      "description": "Nova Bíblia de Acesso Livre (NVA), pt-BR, MAST-program translation (unfoldingWord Greek NT + Masoretic Hebrew OT). Combined from biblia.publica's 66 per-book JSON files (aggregator; primary host is git.door43.org/alexandre_brazil) into a single array, canonical Protestant order, no other transformation. NOTE: `url` points at the source directory for humans, not a single fetchable file — `sinew.fetch --download` does NOT support re-deriving this source (unlike the other zip/single-file entries); re-run the manual per-book fetch + combine step to refresh it.",
+      "license": "CC BY-SA 4.0",
+      "retrieved": "2026-08-26"
+    },
     "viz_d3": {
       "file": "src/sinew/viz/vendor/d3.v7.min.js",
       "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539",

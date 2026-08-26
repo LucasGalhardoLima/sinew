@@ -3,6 +3,7 @@ pretty_name: "Sinew — sourced Bible connection-graph"
 license: cc-by-4.0
 language:
   - en
+  - pt
 tags:
   - bible
   - cross-references
@@ -63,7 +64,7 @@ silently dropped. v1 is entirely **public-domain text + CC-BY data** → frictio
 
 | | |
 |---|---|
-| **Text** | World English Bible (WEB), public domain — 31,095 verses / 1,189 chapters / 66 books |
+| **Text** | World English Bible (WEB, English, public domain) — canonical, 31,095 verses / 1,189 chapters / 66 books. Plus Bíblia Livre (BLIVRE, pt-BR, CC BY 4.0 Brasil) and Nova Bíblia de Acesso Livre (NVA, pt-BR, CC BY-SA 4.0), each ~99.9% coverage |
 | **Canonical IDs** | `Book.Chapter.Verse` (e.g. `John.3.16`), **eng/KJV** numbering base |
 | **Versification** | `eng` (identity) + `org` (Hebrew) per verse, via the Copenhagen Alliance spec |
 | **Connections** | OpenBible cross-references → **613,998** Tier-2 edges (`type=cross_reference`, `weight=votes`) |
@@ -99,7 +100,7 @@ db = hf_hub_download("LucasGalhardoLima/sinew", "sinew.sqlite", repo_type="datas
 con = sqlite3.connect(db)
 
 # John 3:16 and its strongest sourced cross-references (with provenance)
-con.execute("SELECT text FROM texts WHERE verse_id='John.3.16'").fetchone()
+con.execute("SELECT text FROM texts WHERE verse_id='John.3.16' AND translation='WEB'").fetchone()
 con.execute("""SELECT target_verse_id, source, weight FROM connections
                WHERE source_verse_id='John.3.16' AND review_status='ok'
                ORDER BY weight DESC LIMIT 5""").fetchall()
@@ -113,7 +114,7 @@ con.execute("SELECT scheme_ref FROM versification_map WHERE verse_id='Joel.2.32'
 
 - **`verses`** — `verse_id (PK)`, `book`, `chapter`, `verse`, `canonical_order`, `tier=1` *(stable, translation-independent address)*
 - **`books`** — `book (PK)`, `name`, `testament`, `book_number`, `chapter_count`
-- **`texts`** — `verse_id`, `translation`, `text`, `tier=1` *(PK `verse_id+translation`; v1: WEB only)*
+- **`texts`** — `verse_id`, `translation`, `text`, `tier=1` *(PK `verse_id+translation`; `WEB`, `BLIVRE`, or `NVA`)*
 - **`versification_map`** — `verse_id`, `scheme ∈ {eng,org}`, `scheme_ref`, `status ∈ {present,merged,split}`, `tier=1`
 - **`connections`** — `source_verse_id`, `target_verse_id`, `type`, `source`, `weight`, `confidence`, `review_status`, `turpie_class (NULL in v1)`, `tier=2`
 - **`dataset_meta`** — `key`, `value`
@@ -126,14 +127,18 @@ gaps) is **flagged in `review_status`, never dropped** — the "no silent failur
 
 | Source | Provides | License |
 |---|---|---|
-| [World English Bible](https://ebible.org/web/) (via getbible.net v2) | PD English text | Public Domain |
+| [World English Bible](https://ebible.org/web/) (via getbible.net v2) | PD English text (canonical) | Public Domain |
+| [Bíblia Livre (BLIVRE)](https://github.com/blivre/BibliaLivre), N4 edition | pt-BR text, second `texts` translation | **CC BY 4.0 Brasil** |
+| [Nova Bíblia de Acesso Livre (NVA)](https://www.biblianva.com.br/) | pt-BR text, third `texts` translation | **CC BY-SA 4.0** |
 | [Copenhagen Alliance versification](https://github.com/Copenhagen-Alliance/versification-specification) | eng/org mappings | CC-BY / open |
 | [OpenBible.info cross-references](https://www.openbible.info/labs/cross-references/) | ~340k weighted edges | **CC-BY** |
 
-**This compilation is licensed CC-BY-4.0** and **requires attribution to OpenBible.info**; the
-underlying Bible text is public domain. Exact retrieval URLs + sha256 pins are in `sources.lock.json`
-and the `dataset_meta` table.
+**This compilation is licensed CC-BY-4.0** and **requires attribution to OpenBible.info, BLIVRE,
+and NVA** (see `LICENSE`); the WEB text is public domain, the BLIVRE text is CC BY 4.0 Brasil, the
+NVA text is CC BY-SA 4.0 (ShareAlike binds only the NVA text itself, not the whole compilation —
+see `LICENSE` for the reasoning). Exact retrieval URLs + sha256 pins are in
+`sources.lock.json` and the `dataset_meta` table.
 
 **Roadmap (P1):** typed NT→OT quotations (Turpie 1868, classified A–E); deeper Tier-3 semantic search
 beyond the explorer (a query/MCP-layer semantic endpoint — the explorer's in-browser theme search
-already ships); original-language (Macula) lemma/morphology; more PD translations + multilingual alignment.
+already ships); original-language (Macula) lemma/morphology; more translations + multilingual alignment beyond BLIVRE/NVA (pt-BR, shipped).

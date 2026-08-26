@@ -38,4 +38,5 @@ authoritative, and the terrain's positions are explicitly *"computed, not author
 🧑‍💻 **Code & build:** <https://github.com/LucasGalhardoLima/sinew>
 🗃️ **Dataset:** <https://huggingface.co/datasets/LucasGalhardoLima/sinew>
 
-Licensed CC-BY-4.0; cross-references © OpenBible.info (CC-BY); Bible text is public domain (WEB).
+Licensed CC-BY-4.0; cross-references © OpenBible.info (CC-BY); Bible text is public domain (WEB,
+English), CC BY 4.0 Brasil (BLIVRE, pt-BR), or CC BY-SA 4.0 (NVA, pt-BR).
